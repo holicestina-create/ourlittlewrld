@@ -1,0 +1,2122 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Heart, Music, Volume2, VolumeX, Play, Pause, ChevronLeft, ChevronRight,
+  Search, Lock, Unlock, Plus, Edit3, Trash2, Calendar, Star, Film, Image,
+  Code, Sparkles, BookOpen, Clock, X, Check, Minimize2, Maximize2,
+  ExternalLink, RefreshCw, Folder, Layers, Mail, MessageCircle, FileText,
+  Sliders, ArrowRight, Share2, Tag, Monitor, CheckCircle, AlertCircle
+} from 'lucide-react';
+
+// --- STYLES & FONTS INJECTION ---
+const fontStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Caveat:wght@500;700&family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+  .font-serif-heading { font-family: 'Cormorant Garamond', Georgia, serif; }
+  .font-handwriting { font-family: 'Caveat', cursive; }
+  .font-code { font-family: 'Fira Code', monospace; }
+  .font-sans-body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  /* Paper texture overlay effect */
+  .bg-paper-texture {
+    background-color: #FAF6F0;
+    background-image: radial-gradient(#E8DFD1 0.75px, transparent 0.75px), radial-gradient(#E8DFD1 0.75px, #FAF6F0 0.75px);
+    background-size: 30px 30px;
+    background-position: 0 0, 15px 15px;
+  }
+
+  /* Polaroid framing */
+  .polaroid-frame {
+    background: #FFFDF9;
+    padding: 12px 12px 36px 12px;
+    box-shadow: 0 10px 25px -5px rgba(74, 59, 50, 0.15), 0 8px 10px -6px rgba(74, 59, 50, 0.1);
+    border: 1px solid #E8DFD1;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Washi tape effect */
+  .washi-tape {
+    background: rgba(229, 195, 198, 0.65);
+    height: 24px;
+    width: 90px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    backdrop-filter: blur(1px);
+    border-left: 2px dashed rgba(255,255,255,0.5);
+    border-right: 2px dashed rgba(255,255,255,0.5);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F3ECE1;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #C48B92;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7A5C4D;
+  }
+`;
+
+// --- DEFAULT INITIAL DATA ---
+const DEFAULT_READ_WHEN_CATEGORIES = [
+  "Read Me When We're Arguing",
+  "Read Me When You're Sad",
+  "Read Me When You're Confused",
+  "Read Me When You're Pressured in Life",
+  "Read Me When You're Overwhelmed",
+  "Read Me When You Feel Like Giving Up",
+  "Read Me When You Doubt Yourself",
+  "Read Me When You Miss Me",
+  "Read Me When You Feel Unappreciated",
+  "Read Me When You Need Reassurance",
+  "Read Me When You're Angry",
+  "Read Me When You Can't Sleep",
+  "Read Me When You Feel Alone",
+  "Read Me When You Need Motivation",
+  "Read Me When You Forget How Much I Love You"
+];
+
+const INITIAL_DATA = {
+  homepage: {
+    tagline: "A digitized collection of things and core memories OF US.",
+    featuredPhoto: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000",
+    startDate: "2024-05-29T00:00:00",
+    bgMusicUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3",
+    bgMusicTitle: "Our Soft Acoustic Melody",
+    bgMusicArtist: "Dedicated to My Love",
+    welcomeHeading: "Our Little World",
+    welcomeSubheading: "A digital time capsule crafted with all my love"
+  },
+  letters: [
+    {
+      id: 'l1',
+      category: "Read Me When You Miss Me",
+      title: "When distance feels a little too heavy",
+      date: "2024-06-15",
+      content: "My sweetest love,\n\nIf you are reading this, it means you're missing me right now. Close your eyes for five seconds and take a deep breath. Imagine me wrapping my arms around your waist and resting my chin on your shoulder. Wherever you are, my heart is always sitting right beside you.\n\nI love you more than words can measure.",
+      photoUrl: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&q=80&w=800",
+      favorite: true
+    },
+    {
+      id: 'l2',
+      category: "Read Me When You're Pressured in Life",
+      title: "Take a breath, my brilliant engineer",
+      date: "2024-07-20",
+      content: "Hey handsome,\n\nI know how hard you push yourself and how much weight you carry on your shoulders. You are so smart, capable, and resilient. Remember that your worth is not measured by immediate perfection. Take it step by step, bug by bug, challenge by challenge. I am so ridiculously proud of you.",
+      photoUrl: "",
+      favorite: false
+    },
+    {
+      id: 'l3',
+      category: "Read Me When You Need Reassurance",
+      title: "Always & Forever My Favorite Person",
+      date: "2024-08-10",
+      content: "My darling,\n\nNever doubt for a single second how deeply and unconditionally you are cherished. Out of 8 billion people, choosing you every single day is the easiest decision of my life.",
+      photoUrl: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=800",
+      favorite: true
+    }
+  ],
+  wordsIOwe: [
+    {
+      id: 'w1',
+      category: "Things I Want to Acknowledge",
+      title: "Thank you for listening when I get emotional",
+      date: "2024-09-02",
+      content: "I want to acknowledge how patient you are with me. Even when I struggle to articulate what I am feeling, you stay calm and make me feel safe. That is a rare and precious gift, and I will never take it for granted.",
+      photoUrl: "",
+      favorite: true
+    },
+    {
+      id: 'w2',
+      category: "Apologies",
+      title: "For the moments I got stubborn",
+      date: "2024-10-14",
+      content: "I'm sorry for those little moments when pride gets in the way of expressing how much I care. Winning an argument will never matter more to me than your peace of mind.",
+      photoUrl: "",
+      favorite: false
+    }
+  ],
+  poems: [
+    {
+      id: 'p1',
+      title: "I Carry Your Heart With Me",
+      author: "E.E. Cummings",
+      date: "2024-06-01",
+      poemText: "i carry your heart with me (i carry it in\nmy heart) i am never without it (anywhere\ni go you go, my dear; and whatever is done\nby only me is your doing, my darling)\n\ni fear no fate (for you are my fate, my sweet)\ni want no world (for beautiful you are my world, my true)\nand it’s you are whatever a moon has always meant\nand whatever a sun will always sing is you",
+      personalNote: "This poem always reminds me of the way I feel whenever we have to say goodbye after a date.",
+      favorite: true
+    },
+    {
+      id: 'p2',
+      title: "A Quiet Harbour",
+      author: "Personal Note",
+      date: "2024-09-18",
+      poemText: "In a world of noisy algorithms and restless minds,\nYou are the quiet constant that my spirit always finds.\nLike code running smoothly without a single trace of doubt,\nYour love is the sanctuary my heart is all about.",
+      personalNote: "Written while watching you code silently beside me.",
+      favorite: true
+    }
+  ],
+  songs: [
+    {
+      id: 's1',
+      playlist: "Songs That Remind Me of You",
+      title: "Lover",
+      artist: "Taylor Swift",
+      coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=400",
+      link: "https://open.spotify.com",
+      dedication: "Because my heart truly belongs to three places: home, wherever you are, and in your arms."
+    },
+    {
+      id: 's2',
+      playlist: "Songs for Our Quiet Moments",
+      title: "Until I Found You",
+      artist: "Stephen Sanchez",
+      coverUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=400",
+      link: "https://open.spotify.com",
+      dedication: "I used to wander without a clear view, until I found you."
+    }
+  ],
+  reasons: {
+    1: "The soft way your eyes warm up when you smile at me.",
+    2: "How passionately you explain computer engineering concepts even when I'm just listening to your voice.",
+    3: "The feeling of safety whenever you hold my hand in crowded places.",
+    4: "How you always remember my favorite snacks when I'm having a long day.",
+    5: "The pride in your eyes when you finally solve a complex coding problem.",
+    6: "Your gentle laugh when I make silly jokes."
+  },
+  worldsCollide: {
+    photos: [
+      {
+        id: 'ph1',
+        url: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000",
+        caption: "Our first official date by the bay.",
+        date: "2024-05-29",
+        location: "Seaside Promenade",
+        albumId: "a1"
+      },
+      {
+        id: 'ph2',
+        url: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1000",
+        caption: "Late night coffee and code debugging together.",
+        date: "2024-07-14",
+        location: "Our Cozy Corner Cafe",
+        albumId: "a2"
+      }
+    ],
+    videos: [
+      {
+        id: 'v1',
+        url: "https://assets.mixkit.co/videos/preview/mixkit-couple-walking-holding-hands-on-beach-41551-large.mp4",
+        title: "Sunset Walk Hand-in-Hand",
+        description: "A serene afternoon walk where we laughed about everything and nothing.",
+        date: "2024-08-05"
+      }
+    ],
+    timeline: [
+      {
+        id: 't1',
+        date: "May 29, 2024",
+        title: "The Beginning of Our Story",
+        description: "The day we officially decided to walk life's path together.",
+        icon: "heart"
+      },
+      {
+        id: 't2',
+        date: "July 15, 2024",
+        title: "Our First Road Trip",
+        description: "Endless playlists, wrong turns, and unforgettable conversations.",
+        icon: "map-pin"
+      },
+      {
+        id: 't3',
+        date: "October 10, 2024",
+        title: "Your Engineering Graduation",
+        description: "Watching you walk across the stage—my proudest moment seeing you achieve your dreams.",
+        icon: "award"
+      }
+    ],
+    albums: [
+      { id: 'a1', name: "Romantic Dates", description: "Special evenings out together", coverUrl: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=600" },
+      { id: 'a2', name: "Late Night Study & Code", description: "Quiet evenings supporting each other", coverUrl: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=600" }
+    ]
+  },
+  littleMoments: [
+    {
+      id: 'lm1',
+      title: "Before Your Big Exam",
+      occasion: "Good Luck Message",
+      description: "A gentle reminder that you are immensely capable and I'm cheering for you always.",
+      videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-a-video-call-42886-large.mp4",
+      thumbnailUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600",
+      date: "2024-09-01"
+    }
+  ]
+};
+
+export default function App() {
+  // Inject custom dynamic font styles
+  useEffect(() => {
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = fontStyles;
+    document.head.appendChild(styleTag);
+    return () => { document.head.removeChild(styleTag); };
+  }, []);
+
+  // --- PERSISTENCE STATE ---
+  const [data, setData] = useState(() => {
+    const saved = localStorage.getItem('our_little_world_data');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return INITIAL_DATA;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('our_little_world_data', JSON.stringify(data));
+  }, [data]);
+
+  // --- APP CONTROL STATES ---
+  const [hasEntered, setHasEntered] = useState(false);
+  const [activeTab, setActiveTab] = useState('home'); // home, read_when, words_owe, poems, songs, reasons, worlds_collide, little_moments
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
+  const [isAdminAuth, setIsAdminAuth] = useState(false);
+  const [adminErrorMessage, setAdminErrorMessage] = useState('');
+
+  // --- GLOBAL AUDIO PLAYER STATE ---
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState(false);
+
+  // Initialize and Sync Audio
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  const handleEnterWorld = () => {
+    setHasEntered(true);
+    if (audioRef.current) {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.warn("Autoplay audio blocked or error:", err);
+      });
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => console.error(err));
+    }
+  };
+
+  const handleAudioTimeUpdate = () => {
+    if (audioRef.current) {
+      const cur = audioRef.current.currentTime;
+      const dur = audioRef.current.duration || 0;
+      setCurrentTime(cur);
+      setDuration(dur);
+      if (dur > 0) {
+        setProgress((cur / dur) * 100);
+      }
+    }
+  };
+
+  const handleSeek = (e) => {
+    const newProgress = parseFloat(e.target.value);
+    if (audioRef.current && duration > 0) {
+      const newTime = (newProgress / 100) * duration;
+      audioRef.current.currentTime = newTime;
+      setProgress(newProgress);
+    }
+  };
+
+  // --- LIVE RELATIONSHIP COUNTER ---
+  const [timeDiff, setTimeDiff] = useState({ years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const start = new Date(data.homepage.startDate);
+      const now = new Date();
+      if (isNaN(start.getTime())) return;
+
+      let years = now.getFullYear() - start.getFullYear();
+      let months = now.getMonth() - start.getMonth();
+      let days = now.getDate() - start.getDate();
+      let hours = now.getHours() - start.getHours();
+      let minutes = now.getMinutes() - start.getMinutes();
+      let seconds = now.getSeconds() - start.getSeconds();
+
+      if (seconds < 0) { seconds += 60; minutes--; }
+      if (minutes < 0) { minutes += 60; hours--; }
+      if (hours < 0) { hours += 24; days--; }
+      if (days < 0) {
+        const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        days += prevMonthLastDay;
+        months--;
+      }
+      if (months < 0) { months += 12; years--; }
+
+      setTimeDiff({ years, months, days, hours, minutes, seconds });
+    };
+
+    calculateTime();
+    const timer = setInterval(calculateTime, 1000);
+    return () => clearInterval(timer);
+  }, [data.homepage.startDate]);
+
+  // Format Time Helper
+  const formatTime = (sec) => {
+    if (isNaN(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  // Admin PIN Auth
+  const handleAdminAuth = (e) => {
+    e.preventDefault();
+    if (adminPin === '0529' || adminPin === 'admin') {
+      setIsAdminAuth(true);
+      setAdminErrorMessage('');
+    } else {
+      setAdminErrorMessage('Incorrect PIN. (Hint: 0529)');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-paper-texture text-[#4A3B32] font-sans-body relative pb-28 selection:bg-[#E5C3C6] selection:text-[#4A3B32]">
+      {/* Hidden Persistent Audio Element */}
+      <audio
+        ref={audioRef}
+        src={data.homepage.bgMusicUrl}
+        onTimeUpdate={handleAudioTimeUpdate}
+        onEnded={() => setIsPlaying(false)}
+        loop
+      />
+
+      {/* --- WELCOME SCREEN / ENTRANCE ANIMATION --- */}
+      {!hasEntered && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#FAF6F0] p-6 text-center transition-opacity duration-700">
+          <div className="absolute inset-0 bg-paper-texture opacity-80 pointer-events-none" />
+          <div className="relative z-10 max-w-xl mx-auto flex flex-col items-center">
+            <div className="w-20 h-20 mb-6 rounded-full bg-[#F3ECE1] border border-[#E8DFD1] flex items-center justify-center text-[#C48B92] shadow-sm animate-pulse">
+              <Heart size={36} fill="#C48B92" className="opacity-80" />
+            </div>
+            
+            <h1 className="font-serif-heading text-5xl md:text-6xl text-[#4A3B32] font-bold mb-4 tracking-tight">
+              {data.homepage.welcomeHeading || "Our Little World"}
+            </h1>
+            
+            <p className="font-serif-heading italic text-xl md:text-2xl text-[#7A5C4D] mb-8 max-w-md">
+              "{data.homepage.tagline}"
+            </p>
+
+            <div className="w-16 h-px bg-[#C48B92] mb-10 opacity-50" />
+
+            <button
+              onClick={handleEnterWorld}
+              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-[#7A5C4D] hover:bg-[#4A3B32] text-[#FFFDF9] font-medium text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            >
+              <Music className="w-5 h-5 text-[#E5C3C6] animate-bounce" />
+              <span>Enter Our Little World</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <p className="mt-8 text-xs text-[#7A5C4D] opacity-70 font-mono">
+              Clicking will turn on our background music stream ♪
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* --- MAIN HEADER & NAVIGATION --- */}
+      <header className="sticky top-0 z-30 bg-[#FAF6F0]/90 backdrop-blur-md border-b border-[#E8DFD1] shadow-xs">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setActiveTab('home')}
+            className="flex items-center gap-2 group text-left cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-full bg-[#E5C3C6]/40 flex items-center justify-center text-[#C48B92]">
+              <Heart size={18} fill="#C48B92" />
+            </div>
+            <div>
+              <span className="font-serif-heading text-2xl font-bold tracking-tight text-[#4A3B32] block leading-none">
+                Our Little World
+              </span>
+              <span className="text-[10px] font-handwriting text-[#7A5C4D] text-sm leading-none">
+                a digitized time capsule
+              </span>
+            </div>
+          </button>
+
+          {/* Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {[
+              { id: 'read_when', label: "Read This When..." },
+              { id: 'words_owe', label: "Words I Owe You" },
+              { id: 'poems', label: "Poems" },
+              { id: 'songs', label: "Songs" },
+              { id: 'reasons', label: "1,000 Reasons" },
+              { id: 'worlds_collide', label: "Worlds Collide" },
+              { id: 'little_moments', label: "Little Moments" }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'bg-[#C48B92] text-white shadow-xs'
+                    : 'text-[#7A5C4D] hover:bg-[#F3ECE1] hover:text-[#4A3B32]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Admin Lock Button */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAdminOpen(true)}
+              className="p-2 rounded-full text-[#7A5C4D] hover:bg-[#F3ECE1] hover:text-[#4A3B32] transition-colors cursor-pointer"
+              title="Open Admin Dashboard"
+            >
+              {isAdminAuth ? <Unlock size={18} className="text-[#C48B92]" /> : <Lock size={18} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Horizontal Bar */}
+        <div className="lg:hidden flex overflow-x-auto px-4 py-2 gap-2 border-t border-[#E8DFD1]/50 no-scrollbar">
+          {[
+            { id: 'home', label: "Home" },
+            { id: 'read_when', label: "Read When" },
+            { id: 'words_owe', label: "Words I Owe" },
+            { id: 'poems', label: "Poems" },
+            { id: 'songs', label: "Songs" },
+            { id: 'reasons', label: "1000 Reasons" },
+            { id: 'worlds_collide', label: "Worlds Collide" },
+            { id: 'little_moments', label: "Little Moments" }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-[#C48B92] text-white font-medium'
+                  : 'bg-[#F3ECE1] text-[#7A5C4D]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* --- MAIN CONTENT CONTAINER --- */}
+      <main className="max-w-6xl mx-auto px-4 py-8">
+
+        {/* ================= HOMEPAGE ================= */}
+        {activeTab === 'home' && (
+          <div className="space-y-12">
+            {/* Tagline & Hero */}
+            <div className="text-center max-w-3xl mx-auto space-y-4 pt-4">
+              <span className="inline-block px-4 py-1 rounded-full bg-[#E5C3C6]/30 text-[#C48B92] font-handwriting text-xl">
+                A digitized time capsule of us
+              </span>
+              <h1 className="font-serif-heading text-3xl md:text-5xl font-bold text-[#4A3B32] leading-tight">
+                "{data.homepage.tagline}"
+              </h1>
+            </div>
+
+            {/* Featured Photo + Live Relationship Counter Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+              {/* Centerpiece Polaroid Photo */}
+              <div className="md:col-span-6 flex justify-center">
+                <div className="relative group max-w-sm">
+                  {/* Washi Tape Accent */}
+                  <div className="washi-tape absolute -top-3 left-1/2 -translate-x-1/2 z-20 transform -rotate-2" />
+                  <div className="polaroid-frame transform -rotate-1 group-hover:rotate-0 transition-transform duration-500">
+                    <img
+                      src={data.homepage.featuredPhoto}
+                      alt="Us Together"
+                      className="w-full h-80 object-cover rounded-xs filter contrast-[0.95]"
+                    />
+                    <div className="mt-4 text-center">
+                      <p className="font-handwriting text-2xl text-[#7A5C4D]">You & Me</p>
+                      <p className="text-[11px] text-[#7A5C4D]/60 uppercase tracking-widest font-mono">Our Favorite Memory</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Ticking Counter ("Our Time Together") */}
+              <div className="md:col-span-6 space-y-6 bg-[#FFFDF9] p-8 rounded-2xl border border-[#E8DFD1] shadow-xs text-center md:text-left">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 text-[#C48B92] font-mono text-xs uppercase tracking-wider">
+                    <Clock size={14} />
+                    <span>Our Time Together</span>
+                  </div>
+                  <h2 className="font-serif-heading text-3xl font-bold text-[#4A3B32]">
+                    Every second with you is precious
+                  </h2>
+                </div>
+
+                {/* Counter Grid */}
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  {[
+                    { label: 'Years', val: timeDiff.years },
+                    { label: 'Months', val: timeDiff.months },
+                    { label: 'Days', val: timeDiff.days },
+                    { label: 'Hours', val: timeDiff.hours },
+                    { label: 'Minutes', val: timeDiff.minutes },
+                    { label: 'Seconds', val: timeDiff.seconds }
+                  ].map((unit, idx) => (
+                    <div key={idx} className="bg-[#FAF6F0] p-3 rounded-xl border border-[#E8DFD1]/60 text-center">
+                      <div className="font-serif-heading text-2xl md:text-3xl font-bold text-[#C48B92]">
+                        {unit.val}
+                      </div>
+                      <div className="text-[11px] text-[#7A5C4D] uppercase font-mono mt-0.5">
+                        {unit.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-[#E8DFD1]/40 flex items-center justify-center md:justify-start gap-2">
+                  <Sparkles size={16} className="text-[#C48B92]" />
+                  <p className="font-handwriting text-xl text-[#7A5C4D]">
+                    "Every second is another memory with you."
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 7 Section Cards Grid Overview */}
+            <div className="pt-6 space-y-6">
+              <h3 className="font-serif-heading text-2xl font-bold text-center text-[#4A3B32]">
+                Explore Our Archive
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'read_when', title: "Read This When...", desc: "15 categories of situational love letters for whenever you need me.", icon: Mail, tag: "15 Categories" },
+                  { id: 'words_owe', title: "Words I Owe You", desc: "Apologies, deep thoughts, and messages from the bottom of my heart.", icon: MessageCircle, tag: "Heartfelt Notes" },
+                  { id: 'poems', title: "Poems", desc: "Selected verses and notes that remind me of your quiet charm.", icon: BookOpen, tag: "Poetry Archive" },
+                  { id: 'songs', title: "Songs That Remind Me of You", desc: "Our shared soundtracks, dedications, and quiet playlists.", icon: Music, tag: "Music Playlist" },
+                  { id: 'reasons', title: "A Thousand Reasons", desc: "1,000 code-styled reasons why I love you (Computer Engineering edition).", icon: Code, tag: "IDE Code Archive" },
+                  { id: 'worlds_collide', title: "Worlds Collide", desc: "Scrapbook of our shared photos, videos, timeline, and albums.", icon: Layers, tag: "Memory Scrapbook" },
+                  { id: 'little_moments', title: "Little Moments", desc: "Personal video greetings and special recorded messages.", icon: Film, tag: "Video Greetings" }
+                ].map((item) => {
+                  const IconComp = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className="group p-6 bg-[#FFFDF9] rounded-xl border border-[#E8DFD1] hover:border-[#C48B92] shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between cursor-pointer transform hover:-translate-y-1"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="p-3 rounded-lg bg-[#F3ECE1] text-[#C48B92] group-hover:bg-[#C48B92] group-hover:text-white transition-colors">
+                            <IconComp size={22} />
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-1 rounded bg-[#FAF6F0] text-[#7A5C4D] border border-[#E8DFD1]">
+                            {item.tag}
+                          </span>
+                        </div>
+                        <h4 className="font-serif-heading text-xl font-bold text-[#4A3B32]">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-[#7A5C4D] leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-[#E8DFD1]/40 flex items-center text-xs font-medium text-[#C48B92] group-hover:translate-x-1 transition-transform">
+                        <span>Open Section</span>
+                        <ChevronRight size={14} className="ml-1" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= SECTION 1: READ THIS WHEN... ================= */}
+        {activeTab === 'read_when' && (
+          <ReadWhenSection letters={data.letters} />
+        )}
+
+        {/* ================= SECTION 2: WORDS I OWE YOU ================= */}
+        {activeTab === 'words_owe' && (
+          <WordsIOweSection wordsIOwe={data.wordsIOwe} />
+        )}
+
+        {/* ================= SECTION 3: POEMS ================= */}
+        {activeTab === 'poems' && (
+          <PoemsSection poems={data.poems} />
+        )}
+
+        {/* ================= SECTION 4: SONGS THAT REMIND ME OF YOU ================= */}
+        {activeTab === 'songs' && (
+          <SongsSection songs={data.songs} />
+        )}
+
+        {/* ================= SECTION 5: A THOUSAND REASONS ================= */}
+        {activeTab === 'reasons' && (
+          <ThousandReasonsSection reasons={data.reasons} />
+        )}
+
+        {/* ================= SECTION 6: WORLDS COLLIDE ================= */}
+        {activeTab === 'worlds_collide' && (
+          <WorldsCollideSection worldsCollide={data.worldsCollide} />
+        )}
+
+        {/* ================= SECTION 7: LITTLE MOMENTS ================= */}
+        {activeTab === 'little_moments' && (
+          <LittleMomentsSection littleMoments={data.littleMoments} />
+        )}
+
+      </main>
+
+      {/* --- GLOBAL PERSISTENT AUDIO PLAYER BAR --- */}
+      {hasEntered && (
+        <div className={`fixed bottom-4 right-4 z-40 transition-all duration-300 ${isPlayerMinimized ? 'w-auto' : 'w-full max-w-md px-4 sm:px-0'}`}>
+          <div className="bg-[#4A3B32] text-[#FAF6F0] rounded-2xl shadow-2xl border border-[#7A5C4D] p-3 sm:p-4 backdrop-blur-md">
+            
+            {/* Minimized View Header */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 overflow-hidden cursor-pointer" onClick={() => setIsPlayerMinimized(!isPlayerMinimized)}>
+                <div className="relative flex-shrink-0">
+                  <div className={`w-10 h-10 rounded-lg bg-[#C48B92] flex items-center justify-center overflow-hidden ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }}>
+                    <Music size={20} className="text-[#FFFDF9]" />
+                  </div>
+                  {isPlaying && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E5C3C6] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C48B92]"></span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-[#FFFDF9] truncate">
+                    {data.homepage.bgMusicTitle || "Background Song"}
+                  </p>
+                  <p className="text-[10px] text-[#E5C3C6] truncate">
+                    {data.homepage.bgMusicArtist || "Dedicated Playlist"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={togglePlayPause}
+                  className="p-2 rounded-full bg-[#C48B92] hover:bg-[#E5C3C6] text-white transition-colors cursor-pointer"
+                  title={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                </button>
+
+                <button
+                  onClick={() => setIsPlayerMinimized(!isPlayerMinimized)}
+                  className="p-1.5 rounded-lg text-[#E5C3C6] hover:bg-[#7A5C4D] transition-colors cursor-pointer"
+                  title={isPlayerMinimized ? "Expand Player" : "Minimize Player"}
+                >
+                  {isPlayerMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Expanded Controls */}
+            {!isPlayerMinimized && (
+              <div className="mt-3 pt-3 border-t border-[#7A5C4D]/60 space-y-2">
+                {/* Progress Bar */}
+                <div className="space-y-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={progress}
+                    onChange={handleSeek}
+                    className="w-full h-1 bg-[#7A5C4D] rounded-lg appearance-none cursor-pointer accent-[#C48B92]"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#E5C3C6] font-mono">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
+                </div>
+
+                {/* Volume Control */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="text-[#E5C3C6] hover:text-white cursor-pointer"
+                  >
+                    {isMuted || volume === 0 ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={isMuted ? 0 : volume}
+                    onChange={(e) => {
+                      setVolume(parseFloat(e.target.value));
+                      setIsMuted(false);
+                    }}
+                    className="w-20 h-1 bg-[#7A5C4D] rounded-lg appearance-none cursor-pointer accent-[#C48B92]"
+                  />
+                  <span className="text-[10px] text-[#E5C3C6] font-mono ml-auto">
+                    Global Stream
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* --- PRIVATE ADMIN DASHBOARD MODAL --- */}
+      {adminOpen && (
+        <AdminDashboardModal
+          isOpen={adminOpen}
+          onClose={() => { setAdminOpen(false); setIsAdminAuth(false); setAdminPin(''); }}
+          isAdminAuth={isAdminAuth}
+          handleAdminAuth={handleAdminAuth}
+          adminPin={adminPin}
+          setAdminPin={setAdminPin}
+          adminErrorMessage={adminErrorMessage}
+          data={data}
+          setData={setData}
+        />
+      )}
+    </div>
+  );
+}
+
+// =========================================================================
+// SECTION COMPONENTS
+// =========================================================================
+
+// 1. READ THIS WHEN SECTION
+function ReadWhenSection({ letters }) {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedLetter, setSelectedLetter] = useState(null);
+
+  const categories = DEFAULT_READ_WHEN_CATEGORIES;
+
+  // Filter letters by category
+  const activeCategoryLetters = selectedCategory
+    ? letters.filter(l => l.category === selectedCategory)
+    : [];
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center max-w-2xl mx-auto space-y-2">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Situation Love Letters
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          Read This When...
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          Pick how you're feeling right now, and read what my heart wanted to say to you.
+        </p>
+      </div>
+
+      {/* Categories View */}
+      {!selectedCategory && !selectedLetter && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {categories.map((cat, idx) => {
+            const letterCount = letters.filter(l => l.category === cat).length;
+            return (
+              <button
+                key={idx}
+                onClick={() => setSelectedCategory(cat)}
+                className="group relative p-6 bg-[#FFFDF9] rounded-xl border border-[#E8DFD1] hover:border-[#C48B92] shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between cursor-pointer transform hover:-translate-y-1"
+              >
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-[#FAF6F0] border border-[#E8DFD1] flex items-center justify-center text-[#C48B92] group-hover:bg-[#C48B92] group-hover:text-white transition-colors">
+                    <Mail size={18} />
+                  </div>
+                  <h3 className="font-serif-heading text-xl font-semibold text-[#4A3B32]">
+                    {cat}
+                  </h3>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-[#E8DFD1]/50 flex items-center justify-between text-xs text-[#7A5C4D]">
+                  <span>{letterCount} {letterCount === 1 ? 'Letter' : 'Letters'} available</span>
+                  <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform text-[#C48B92]" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Letter List View for Selected Category */}
+      {selectedCategory && !selectedLetter && (
+        <div className="space-y-6">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#7A5C4D] hover:text-[#4A3B32] cursor-pointer"
+          >
+            <ChevronLeft size={16} />
+            <span>Back to All Categories</span>
+          </button>
+
+          <div className="border-b border-[#E8DFD1] pb-4">
+            <h3 className="font-serif-heading text-3xl font-bold text-[#4A3B32]">
+              {selectedCategory}
+            </h3>
+            <p className="text-xs text-[#7A5C4D] mt-1">
+              Select an envelope to unseal the letter.
+            </p>
+          </div>
+
+          {activeCategoryLetters.length === 0 ? (
+            <div className="text-center py-12 bg-[#FFFDF9] rounded-2xl border border-dashed border-[#E8DFD1]">
+              <Mail className="mx-auto text-[#C48B92] opacity-40 mb-3" size={36} />
+              <p className="font-serif-heading text-xl text-[#7A5C4D]">No letters added to this category yet.</p>
+              <p className="text-xs text-[#7A5C4D]/70 mt-1">You can write and add letters anytime in the Admin Dashboard!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activeCategoryLetters.map((letter) => (
+                <div
+                  key={letter.id}
+                  onClick={() => setSelectedLetter(letter)}
+                  className="p-6 bg-[#FFFDF9] rounded-xl border border-[#E8DFD1] hover:border-[#C48B92] shadow-xs cursor-pointer hover:shadow-md transition-all space-y-3"
+                >
+                  <div className="flex items-center justify-between text-xs text-[#7A5C4D]">
+                    <span className="font-mono text-[10px]">{letter.date || 'Undated'}</span>
+                    {letter.favorite && <Star size={14} className="fill-[#C48B92] text-[#C48B92]" />}
+                  </div>
+                  <h4 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+                    {letter.title}
+                  </h4>
+                  <p className="text-xs text-[#7A5C4D] line-clamp-2 italic">
+                    "{letter.content}"
+                  </p>
+                  <div className="pt-2 text-xs font-medium text-[#C48B92] flex items-center gap-1">
+                    <span>Unseal Letter</span>
+                    <ChevronRight size={14} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Letter Reading View */}
+      {selectedLetter && (
+        <div className="max-w-2xl mx-auto space-y-6">
+          <button
+            onClick={() => setSelectedLetter(null)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#7A5C4D] hover:text-[#4A3B32] cursor-pointer"
+          >
+            <ChevronLeft size={16} />
+            <span>Back to Letters</span>
+          </button>
+
+          <div className="bg-[#FFFDF9] p-8 md:p-12 rounded-2xl border border-[#E8DFD1] shadow-xl space-y-6 relative">
+            <div className="washi-tape absolute -top-3 left-1/2 -translate-x-1/2" />
+
+            <div className="flex items-center justify-between border-b border-[#E8DFD1]/60 pb-4 text-xs text-[#7A5C4D]">
+              <span className="font-mono uppercase">{selectedLetter.category}</span>
+              <span className="font-mono">{selectedLetter.date}</span>
+            </div>
+
+            <h3 className="font-serif-heading text-3xl md:text-4xl font-bold text-[#4A3B32] text-center">
+              {selectedLetter.title}
+            </h3>
+
+            {selectedLetter.photoUrl && (
+              <div className="polaroid-frame max-w-sm mx-auto my-4">
+                <img
+                  src={selectedLetter.photoUrl}
+                  alt="Attachment"
+                  className="w-full h-60 object-cover rounded-xs"
+                />
+              </div>
+            )}
+
+            <div className="font-handwriting text-2xl text-[#4A3B32] leading-relaxed whitespace-pre-line pt-2">
+              {selectedLetter.content}
+            </div>
+
+            <div className="pt-8 text-right font-handwriting text-3xl text-[#C48B92]">
+              With all my love ♡
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 2. WORDS I OWE YOU SECTION
+function WordsIOweSection({ wordsIOwe }) {
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeNote, setActiveNote] = useState(null);
+
+  const categories = [
+    'All',
+    'Apologies',
+    'Things I Want to Acknowledge',
+    'Things I Wish I Had Said',
+    'Words I Struggle to Express',
+    'Messages About Us',
+    'Letters About Making Things Right'
+  ];
+
+  const filtered = selectedCategory === 'All'
+    ? wordsIOwe
+    : wordsIOwe.filter(w => w.category === selectedCategory);
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center max-w-2xl mx-auto space-y-2">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Reflective Messages & Reconciliation
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          Words I Owe You
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          For all the times I needed to apologize, express accountability, or tell you what was truly in my heart.
+        </p>
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex overflow-x-auto gap-2 pb-2 justify-start md:justify-center no-scrollbar">
+        {categories.map((cat, idx) => (
+          <button
+            key={idx}
+            onClick={() => setSelectedCategory(cat)}
+            className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+              selectedCategory === cat
+                ? 'bg-[#7A5C4D] text-[#FFFDF9] shadow-xs'
+                : 'bg-[#FFFDF9] text-[#7A5C4D] border border-[#E8DFD1] hover:bg-[#F3ECE1]'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid of Notes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map((item) => (
+          <div
+            key={item.id}
+            onClick={() => setActiveNote(item)}
+            className="p-6 bg-[#FFFDF9] rounded-xl border border-[#E8DFD1] hover:border-[#C48B92] shadow-xs hover:shadow-md transition-all cursor-pointer space-y-3"
+          >
+            <div className="flex items-center justify-between text-xs text-[#7A5C4D]">
+              <span className="px-2 py-0.5 rounded bg-[#FAF6F0] font-mono text-[10px] border border-[#E8DFD1]">
+                {item.category}
+              </span>
+              <span className="font-mono text-[10px]">{item.date}</span>
+            </div>
+
+            <h3 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+              {item.title}
+            </h3>
+
+            <p className="text-xs text-[#7A5C4D] line-clamp-3 italic">
+              "{item.content}"
+            </p>
+
+            <div className="pt-2 text-xs font-medium text-[#C48B92] flex items-center gap-1">
+              <span>Read Full Message</span>
+              <ChevronRight size={14} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Note Reader Modal */}
+      {activeNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-[#FFFDF9] max-w-xl w-full p-8 rounded-2xl border border-[#E8DFD1] shadow-2xl relative space-y-4">
+            <button
+              onClick={() => setActiveNote(null)}
+              className="absolute top-4 right-4 p-1 rounded-full text-[#7A5C4D] hover:bg-[#F3ECE1] cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <span className="text-[10px] font-mono uppercase text-[#C48B92]">
+              {activeNote.category}
+            </span>
+
+            <h3 className="font-serif-heading text-3xl font-bold text-[#4A3B32]">
+              {activeNote.title}
+            </h3>
+
+            <div className="font-handwriting text-2xl text-[#4A3B32] leading-relaxed whitespace-pre-line py-2 border-y border-[#E8DFD1]/60">
+              {activeNote.content}
+            </div>
+
+            <div className="text-right text-xs text-[#7A5C4D] font-mono">
+              {activeNote.date}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 3. POEMS SECTION
+function PoemsSection({ poems }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPoem, setSelectedPoem] = useState(null);
+
+  const filtered = poems.filter(p =>
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.poemText.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center max-w-2xl mx-auto space-y-2">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Literary Archive
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          Poems & Verses
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          Poems and quiet literature that never fail to remind me of you.
+        </p>
+      </div>
+
+      {/* Search Input */}
+      <div className="max-w-md mx-auto relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7A5C4D]" size={16} />
+        <input
+          type="text"
+          placeholder="Search poems or lines..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-[#FFFDF9] border border-[#E8DFD1] rounded-full text-xs text-[#4A3B32] focus:outline-none focus:border-[#C48B92]"
+        />
+      </div>
+
+      {/* Poem Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {filtered.map((poem) => (
+          <div
+            key={poem.id}
+            onClick={() => setSelectedPoem(poem)}
+            className="p-6 bg-[#FFFDF9] rounded-2xl border border-[#E8DFD1] shadow-xs hover:shadow-md transition-all cursor-pointer space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-[#7A5C4D]">
+                <span className="font-serif-heading italic">{poem.author}</span>
+                <span className="font-mono text-[10px]">{poem.date}</span>
+              </div>
+
+              <h3 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+                {poem.title}
+              </h3>
+
+              <div className="font-serif-heading text-sm text-[#7A5C4D] line-clamp-4 leading-relaxed whitespace-pre-line italic">
+                {poem.poemText}
+              </div>
+            </div>
+
+            {poem.personalNote && (
+              <div className="pt-3 border-t border-[#E8DFD1]/50 bg-[#FAF6F0] p-3 rounded-xl">
+                <span className="text-[10px] font-mono text-[#C48B92] uppercase block mb-1">
+                  Why this reminds me of you:
+                </span>
+                <p className="font-handwriting text-lg text-[#7A5C4D] leading-tight">
+                  "{poem.personalNote}"
+                </p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Full Poem Reader Modal */}
+      {selectedPoem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-[#FFFDF9] max-w-xl w-full max-h-[85vh] overflow-y-auto p-8 rounded-2xl border border-[#E8DFD1] shadow-2xl relative space-y-6">
+            <button
+              onClick={() => setSelectedPoem(null)}
+              className="absolute top-4 right-4 p-1 rounded-full text-[#7A5C4D] hover:bg-[#F3ECE1] cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center space-y-1">
+              <h3 className="font-serif-heading text-3xl font-bold text-[#4A3B32]">
+                {selectedPoem.title}
+              </h3>
+              <p className="font-serif-heading italic text-sm text-[#7A5C4D]">
+                by {selectedPoem.author}
+              </p>
+            </div>
+
+            <div className="font-serif-heading text-lg text-[#4A3B32] leading-relaxed whitespace-pre-line text-center py-4 border-y border-[#E8DFD1]">
+              {selectedPoem.poemText}
+            </div>
+
+            {selectedPoem.personalNote && (
+              <div className="bg-[#FAF6F0] p-4 rounded-xl border border-[#E8DFD1]">
+                <span className="text-xs font-mono text-[#C48B92] uppercase block mb-1">
+                  My Personal Note for You
+                </span>
+                <p className="font-handwriting text-2xl text-[#7A5C4D]">
+                  "{selectedPoem.personalNote}"
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 4. SONGS THAT REMIND ME OF YOU SECTION
+function SongsSection({ songs }) {
+  const [selectedPlaylist, setSelectedPlaylist] = useState('All');
+
+  const playlists = [
+    'All',
+    'Songs That Remind Me of You',
+    'Songs I Want to Dedicate to You',
+    'Songs That Sound Like Us',
+    'Songs to Listen to When You Miss Me',
+    'Songs for Our Quiet Moments',
+    'Songs That Remind Me of Our Memories'
+  ];
+
+  const filtered = selectedPlaylist === 'All'
+    ? songs
+    : songs.filter(s => s.playlist === selectedPlaylist);
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center max-w-2xl mx-auto space-y-2">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Soundtrack Archive
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          Songs That Remind Me of You
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          Our personal playlist archive distinct from our background stream.
+        </p>
+      </div>
+
+      {/* Playlist Selector Pills */}
+      <div className="flex overflow-x-auto gap-2 pb-2 justify-start md:justify-center no-scrollbar">
+        {playlists.map((pl, idx) => (
+          <button
+            key={idx}
+            onClick={() => setSelectedPlaylist(pl)}
+            className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+              selectedPlaylist === pl
+                ? 'bg-[#C48B92] text-white shadow-xs'
+                : 'bg-[#FFFDF9] text-[#7A5C4D] border border-[#E8DFD1] hover:bg-[#F3ECE1]'
+            }`}
+          >
+            {pl}
+          </button>
+        ))}
+      </div>
+
+      {/* Songs Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {filtered.map((song) => (
+          <div
+            key={song.id}
+            className="p-5 bg-[#FFFDF9] rounded-2xl border border-[#E8DFD1] shadow-xs flex flex-col sm:flex-row gap-4 items-center"
+          >
+            <img
+              src={song.coverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=300"}
+              alt={song.title}
+              className="w-24 h-24 object-cover rounded-xl border border-[#E8DFD1] flex-shrink-0"
+            />
+
+            <div className="space-y-2 flex-grow text-center sm:text-left">
+              <div>
+                <span className="text-[10px] font-mono text-[#C48B92] uppercase">
+                  {song.playlist}
+                </span>
+                <h3 className="font-serif-heading text-xl font-bold text-[#4A3B32]">
+                  {song.title}
+                </h3>
+                <p className="text-xs text-[#7A5C4D] font-medium">
+                  {song.artist}
+                </p>
+              </div>
+
+              {song.dedication && (
+                <p className="font-handwriting text-lg text-[#7A5C4D] italic">
+                  "{song.dedication}"
+                </p>
+              )}
+
+              {song.link && (
+                <a
+                  href={song.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-[#C48B92] hover:underline cursor-pointer"
+                >
+                  <span>Listen via Link</span>
+                  <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 5. A THOUSAND REASONS SECTION (Computer Engineering Theme)
+function ThousandReasonsSection({ reasons }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentRevealedIndex, setCurrentRevealedIndex] = useState(1);
+  const [typedText, setTypedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [filterMode, setFilterMode] = useState('populated'); // 'populated', 'all', 'pending'
+
+  // Populated Count
+  const populatedCount = Object.keys(reasons).filter(k => reasons[k] && reasons[k].trim() !== '').length;
+
+  // Reveal next reason animation
+  const handleRevealNext = () => {
+    // Pick next populated index or next slot
+    const populatedKeys = Object.keys(reasons).map(Number).filter(k => reasons[k] && reasons[k].trim() !== '');
+    if (populatedKeys.length === 0) return;
+
+    const nextIndex = populatedKeys[Math.floor(Math.random() * populatedKeys.length)];
+    setCurrentRevealedIndex(nextIndex);
+
+    const fullText = `[Slot #${nextIndex}]: "${reasons[nextIndex]}"`;
+    setTypedText('');
+    setIsTyping(true);
+
+    let i = 0;
+    const interval = setInterval(() => {
+      setTypedText(fullText.slice(0, i));
+      i++;
+      if (i > fullText.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 25);
+  };
+
+  // Build array of 1000 items
+  const allSlots = Array.from({ length: 1000 }, (_, idx) => {
+    const slotId = idx + 1;
+    return {
+      id: slotId,
+      content: reasons[slotId] || ''
+    };
+  });
+
+  const filteredSlots = allSlots.filter(slot => {
+    const matchesSearch = slot.id.toString().includes(searchTerm) || slot.content.toLowerCase().includes(searchTerm.toLowerCase());
+    if (filterMode === 'populated') return matchesSearch && slot.content.trim() !== '';
+    if (filterMode === 'pending') return matchesSearch && slot.content.trim() === '';
+    return matchesSearch;
+  });
+
+  return (
+    <div className="space-y-8 font-code">
+      {/* SECTION HEADER */}
+      <div className="text-center max-w-2xl mx-auto space-y-2 font-sans-body">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Computer Engineering / Developer Edition
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          A Thousand Reasons Why I Love You
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          Written in code, stored in memory, executed with endless love.
+        </p>
+      </div>
+
+      {/* IDE TERMINAL CONTAINER */}
+      <div className="bg-[#1E1E1E] rounded-2xl border border-[#333] shadow-2xl overflow-hidden text-gray-200">
+        
+        {/* IDE Header Bar */}
+        <div className="bg-[#252526] px-4 py-3 flex items-center justify-between border-b border-[#333]">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-yellow-500 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
+            <span className="text-xs text-gray-400 font-mono ml-2">reasons_of_my_heart.cpp</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <span className="text-emerald-400">
+              Populated: {populatedCount} / 1000
+            </span>
+          </div>
+        </div>
+
+        {/* IDE Content Area */}
+        <div className="p-6 space-y-6">
+          {/* Main Execution CTA */}
+          <div className="bg-[#2D2D2D] p-4 rounded-xl border border-[#444] space-y-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <span className="text-emerald-400 text-xs font-mono">// Execute heart query function</span>
+                <h3 className="text-lg font-mono text-purple-300">
+                  runMyHeart();
+                </h3>
+              </div>
+
+              <button
+                onClick={handleRevealNext}
+                disabled={isTyping}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs rounded-lg shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <Code size={16} />
+                <span>Execute / Reveal Reason</span>
+              </button>
+            </div>
+
+            {/* Typewriter Output Console */}
+            <div className="bg-[#181818] p-4 rounded-lg border border-[#333] min-h-[60px] font-mono text-sm text-yellow-300 flex items-center">
+              {typedText || <span className="text-gray-500 italic">// Click "runMyHeart()" to compile & reveal a reason...</span>}
+            </div>
+          </div>
+
+          {/* Search & Filter Options */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+              <input
+                type="text"
+                placeholder="Search slot # or text..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-[#252526] border border-[#444] rounded-md text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="flex gap-2 text-xs font-mono">
+              {[
+                { id: 'populated', label: `Populated (${populatedCount})` },
+                { id: 'all', label: 'All 1000 Slots' },
+                { id: 'pending', label: 'Pending Only' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setFilterMode(f.id)}
+                  className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                    filterMode === f.id ? 'bg-emerald-600 text-white' : 'bg-[#2D2D2D] text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Code Grid of Reason Slots */}
+          <div className="max-h-96 overflow-y-auto space-y-2 pr-2 border-t border-[#333] pt-4 font-mono text-xs">
+            {filteredSlots.length === 0 ? (
+              <p className="text-gray-500 italic text-center py-4">// No slots matching current filter.</p>
+            ) : (
+              filteredSlots.map(slot => (
+                <div key={slot.id} className="flex items-start gap-3 py-1.5 px-3 rounded hover:bg-[#252526]">
+                  <span className="text-gray-500 w-12 flex-shrink-0 text-right font-mono">
+                    #{slot.id.toString().padStart(4, '0')}
+                  </span>
+                  <div className="flex-grow">
+                    {slot.content ? (
+                      <span className="text-amber-200">
+                        "{slot.content}"
+                      </span>
+                    ) : (
+                      <span className="text-gray-600 italic">
+                        // [Slot #{slot.id} - Pending content]
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Code Footer Note */}
+          <div className="pt-4 border-t border-[#333] text-center text-xs font-mono text-emerald-400/80">
+            <code>while (alive) {"{"} reasons.push("I love you more each day"); {"}"}</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 6. WORLDS COLLIDE SECTION (Scrapbook Shared Memories)
+function WorldsCollideSection({ worldsCollide }) {
+  const [activeTab, setActiveTab] = useState('photos'); // photos, videos, timeline, albums
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center max-w-2xl mx-auto space-y-2">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Our Shared Memory Scrapbook
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          Worlds Collide
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          The digitized archive of our photos, clips, milestone timeline, and album collections.
+        </p>
+      </div>
+
+      {/* Internal Subtabs */}
+      <div className="flex justify-center gap-2 border-b border-[#E8DFD1] pb-3">
+        {[
+          { id: 'photos', label: 'Photo Gallery', icon: Image },
+          { id: 'videos', label: 'Video Clips', icon: Film },
+          { id: 'timeline', label: 'Relationship Timeline', icon: Calendar },
+          { id: 'albums', label: 'Albums', icon: Folder }
+        ].map(sub => {
+          const IconComp = sub.icon;
+          return (
+            <button
+              key={sub.id}
+              onClick={() => setActiveTab(sub.id)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                activeTab === sub.id
+                  ? 'bg-[#7A5C4D] text-white shadow-xs'
+                  : 'bg-[#FFFDF9] text-[#7A5C4D] border border-[#E8DFD1] hover:bg-[#F3ECE1]'
+              }`}
+            >
+              <IconComp size={14} />
+              <span>{sub.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Subtab 1: Photo Gallery */}
+      {activeTab === 'photos' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {worldsCollide.photos.map((photo) => (
+            <div key={photo.id} className="relative group">
+              <div className="washi-tape absolute -top-3 left-1/2 -translate-x-1/2 z-10" />
+              <div className="polaroid-frame transform group-hover:rotate-0 transition-transform duration-300">
+                <img
+                  src={photo.url}
+                  alt={photo.caption}
+                  className="w-full h-64 object-cover rounded-xs"
+                />
+                <div className="mt-3 space-y-1 text-center">
+                  <p className="font-handwriting text-xl text-[#4A3B32]">
+                    {photo.caption}
+                  </p>
+                  <div className="flex items-center justify-between text-[10px] text-[#7A5C4D] font-mono pt-1 border-t border-[#E8DFD1]/50">
+                    <span>{photo.location}</span>
+                    <span>{photo.date}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Subtab 2: Video Clips */}
+      {activeTab === 'videos' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {worldsCollide.videos.map((vid) => (
+            <div key={vid.id} className="bg-[#FFFDF9] rounded-2xl border border-[#E8DFD1] overflow-hidden shadow-xs space-y-3 p-4">
+              <video
+                controls
+                src={vid.url}
+                className="w-full h-60 object-cover rounded-xl bg-black"
+              />
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono text-[#C48B92]">{vid.date}</span>
+                <h3 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+                  {vid.title}
+                </h3>
+                <p className="text-xs text-[#7A5C4D]">
+                  {vid.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Subtab 3: Relationship Timeline */}
+      {activeTab === 'timeline' && (
+        <div className="max-w-xl mx-auto space-y-6 relative before:absolute before:inset-0 before:left-6 before:w-0.5 before:bg-[#E8DFD1]">
+          {worldsCollide.timeline.map((item, idx) => (
+            <div key={item.id} className="relative flex items-start gap-6 group">
+              <div className="w-12 h-12 rounded-full bg-[#FFFDF9] border-2 border-[#C48B92] flex items-center justify-center text-[#C48B92] shadow-sm z-10 flex-shrink-0">
+                <Heart size={20} fill="#C48B92" />
+              </div>
+
+              <div className="bg-[#FFFDF9] p-6 rounded-2xl border border-[#E8DFD1] shadow-xs flex-grow space-y-2">
+                <span className="text-xs font-mono text-[#C48B92] uppercase font-semibold">
+                  {item.date}
+                </span>
+                <h3 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-[#7A5C4D] leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Subtab 4: Albums */}
+      {activeTab === 'albums' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {worldsCollide.albums.map((album) => (
+            <div key={album.id} className="p-6 bg-[#FFFDF9] rounded-2xl border border-[#E8DFD1] shadow-xs flex gap-4 items-center">
+              <img
+                src={album.coverUrl}
+                alt={album.name}
+                className="w-24 h-24 object-cover rounded-xl border border-[#E8DFD1]"
+              />
+              <div className="space-y-1">
+                <h3 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+                  {album.name}
+                </h3>
+                <p className="text-xs text-[#7A5C4D]">
+                  {album.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 7. LITTLE MOMENTS SECTION (Personal Video Messages)
+function LittleMomentsSection({ littleMoments }) {
+  return (
+    <div className="space-y-8">
+      <div className="text-center max-w-2xl mx-auto space-y-2">
+        <span className="text-xs uppercase font-mono tracking-widest text-[#C48B92]">
+          Personal Video Archive
+        </span>
+        <h2 className="font-serif-heading text-4xl font-bold text-[#4A3B32]">
+          Little Moments
+        </h2>
+        <p className="text-sm text-[#7A5C4D]">
+          My recorded video messages, greetings, and clips dedicated to you.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {littleMoments.map((item) => (
+          <div key={item.id} className="bg-[#FFFDF9] p-5 rounded-2xl border border-[#E8DFD1] shadow-xs space-y-4">
+            <div className="relative rounded-xl overflow-hidden bg-black">
+              <video
+                controls
+                src={item.videoUrl}
+                poster={item.thumbnailUrl}
+                className="w-full h-64 object-cover"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#E5C3C6]/30 text-[#C48B92] font-mono text-[10px]">
+                  {item.occasion}
+                </span>
+                <span className="text-[#7A5C4D] font-mono text-[10px]">{item.date}</span>
+              </div>
+
+              <h3 className="font-serif-heading text-2xl font-bold text-[#4A3B32]">
+                {item.title}
+              </h3>
+
+              <p className="text-xs text-[#7A5C4D] leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// PRIVATE ADMIN DASHBOARD MODAL & CMS
+// =========================================================================
+function AdminDashboardModal({
+  isOpen, onClose, isAdminAuth, handleAdminAuth, adminPin, setAdminPin, adminErrorMessage, data, setData
+}) {
+  const [adminTab, setAdminTab] = useState('homepage');
+
+  // Input States for Homepage Settings
+  const [hpForm, setHpForm] = useState(data.homepage);
+
+  // States for new items
+  const [newLetter, setNewLetter] = useState({ category: DEFAULT_READ_WHEN_CATEGORIES[0], title: '', date: '', content: '', photoUrl: '' });
+  const [newWordsIOwe, setNewWordsIOwe] = useState({ category: 'Apologies', title: '', date: '', content: '' });
+  const [newPoem, setNewPoem] = useState({ title: '', author: '', date: '', poemText: '', personalNote: '' });
+  const [newSong, setNewSong] = useState({ playlist: 'Songs That Remind Me of You', title: '', artist: '', coverUrl: '', link: '', dedication: '' });
+  const [reasonSlotInput, setReasonSlotInput] = useState({ slot: 1, text: '' });
+
+  // Update homepage
+  const handleSaveHomepage = (e) => {
+    e.preventDefault();
+    setData(prev => ({ ...prev, homepage: hpForm }));
+    alert('Homepage settings saved successfully!');
+  };
+
+  // Add Letter
+  const handleAddLetter = (e) => {
+    e.preventDefault();
+    if (!newLetter.title || !newLetter.content) return;
+    const l = { ...newLetter, id: 'l_' + Date.now(), favorite: false };
+    setData(prev => ({ ...prev, letters: [l, ...prev.letters] }));
+    setNewLetter({ category: DEFAULT_READ_WHEN_CATEGORIES[0], title: '', date: '', content: '', photoUrl: '' });
+  };
+
+  // Delete Letter
+  const handleDeleteLetter = (id) => {
+    setData(prev => ({ ...prev, letters: prev.letters.filter(l => l.id !== id) }));
+  };
+
+  // Add Words I Owe
+  const handleAddWordsIOwe = (e) => {
+    e.preventDefault();
+    if (!newWordsIOwe.title || !newWordsIOwe.content) return;
+    const w = { ...newWordsIOwe, id: 'w_' + Date.now(), favorite: false };
+    setData(prev => ({ ...prev, wordsIOwe: [w, ...prev.wordsIOwe] }));
+    setNewWordsIOwe({ category: 'Apologies', title: '', date: '', content: '' });
+  };
+
+  // Add Poem
+  const handleAddPoem = (e) => {
+    e.preventDefault();
+    if (!newPoem.title || !newPoem.poemText) return;
+    const p = { ...newPoem, id: 'p_' + Date.now(), favorite: false };
+    setData(prev => ({ ...prev, poems: [p, ...prev.poems] }));
+    setNewPoem({ title: '', author: '', date: '', poemText: '', personalNote: '' });
+  };
+
+  // Add Song
+  const handleAddSong = (e) => {
+    e.preventDefault();
+    if (!newSong.title || !newSong.artist) return;
+    const s = { ...newSong, id: 's_' + Date.now() };
+    setData(prev => ({ ...prev, songs: [s, ...prev.songs] }));
+    setNewSong({ playlist: 'Songs That Remind Me of You', title: '', artist: '', coverUrl: '', link: '', dedication: '' });
+  };
+
+  // Update Reason Slot
+  const handleSaveReasonSlot = (e) => {
+    e.preventDefault();
+    const slotNum = parseInt(reasonSlotInput.slot);
+    if (isNaN(slotNum) || slotNum < 1 || slotNum > 1000) return;
+
+    setData(prev => ({
+      ...prev,
+      reasons: { ...prev.reasons, [slotNum]: reasonSlotInput.text }
+    }));
+    setReasonSlotInput({ slot: slotNum + 1, text: '' });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
+      <div className="bg-[#FFFDF9] max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-[#E8DFD1] shadow-2xl relative p-6 md:p-8 space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#E8DFD1] pb-4">
+          <div className="flex items-center gap-2 text-[#4A3B32]">
+            <Lock size={20} className="text-[#C48B92]" />
+            <h3 className="font-serif-heading text-2xl font-bold">Private Admin Dashboard</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-full text-[#7A5C4D] hover:bg-[#F3ECE1] cursor-pointer">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* PIN AUTHENTICATION GATE */}
+        {!isAdminAuth ? (
+          <form onSubmit={handleAdminAuth} className="max-w-sm mx-auto py-8 space-y-4 text-center">
+            <p className="text-sm text-[#7A5C4D]">Enter your passcode to manage all website content.</p>
+            <input
+              type="password"
+              placeholder="Enter PIN (Default: 0529)"
+              value={adminPin}
+              onChange={(e) => setAdminPin(e.target.value)}
+              className="w-full px-4 py-2.5 bg-[#FAF6F0] border border-[#E8DFD1] rounded-xl text-center font-mono text-lg focus:outline-none focus:border-[#C48B92]"
+            />
+            {adminErrorMessage && <p className="text-xs text-red-500 font-mono">{adminErrorMessage}</p>}
+            <button
+              type="submit"
+              className="w-full py-2.5 bg-[#7A5C4D] hover:bg-[#4A3B32] text-white text-xs font-semibold rounded-xl cursor-pointer"
+            >
+              Unlock Dashboard
+            </button>
+          </form>
+        ) : (
+          /* AUTHENTICATED CMS SUITE */
+          <div className="space-y-6">
+            {/* Admin Subtabs */}
+            <div className="flex overflow-x-auto gap-2 pb-2 border-b border-[#E8DFD1] no-scrollbar">
+              {[
+                { id: 'homepage', label: 'Homepage' },
+                { id: 'letters', label: 'Letters' },
+                { id: 'words_owe', label: 'Words I Owe' },
+                { id: 'poems', label: 'Poems' },
+                { id: 'songs', label: 'Songs' },
+                { id: 'reasons', label: '1000 Reasons Editor' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setAdminTab(t.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer ${
+                    adminTab === t.id ? 'bg-[#C48B92] text-white' : 'bg-[#F3ECE1] text-[#7A5C4D]'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* TAB 1: HOMEPAGE SETTINGS */}
+            {adminTab === 'homepage' && (
+              <form onSubmit={handleSaveHomepage} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-[#7A5C4D] font-mono mb-1">Main Tagline</label>
+                  <input
+                    type="text"
+                    value={hpForm.tagline}
+                    onChange={(e) => setHpForm({ ...hpForm, tagline: e.target.value })}
+                    className="w-full p-2 bg-[#FAF6F0] border border-[#E8DFD1] rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#7A5C4D] font-mono mb-1">Featured Photo URL</label>
+                  <input
+                    type="text"
+                    value={hpForm.featuredPhoto}
+                    onChange={(e) => setHpForm({ ...hpForm, featuredPhoto: e.target.value })}
+                    className="w-full p-2 bg-[#FAF6F0] border border-[#E8DFD1] rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#7A5C4D] font-mono mb-1">Relationship Start Date (ISO Format)</label>
+                  <input
+                    type="datetime-local"
+                    value={hpForm.startDate.slice(0, 16)}
+                    onChange={(e) => setHpForm({ ...hpForm, startDate: e.target.value + ":00" })}
+                    className="w-full p-2 bg-[#FAF6F0] border border-[#E8DFD1] rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#7A5C4D] font-mono mb-1">Background Audio Stream MP3 URL</label>
+                  <input
+                    type="text"
+                    value={hpForm.bgMusicUrl}
+                    onChange={(e) => setHpForm({ ...hpForm, bgMusicUrl: e.target.value })}
+                    className="w-full p-2 bg-[#FAF6F0] border border-[#E8DFD1] rounded-lg"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[#7A5C4D] font-mono mb-1">Audio Track Title</label>
+                    <input
+                      type="text"
+                      value={hpForm.bgMusicTitle}
+                      onChange={(e) => setHpForm({ ...hpForm, bgMusicTitle: e.target.value })}
+                      className="w-full p-2 bg-[#FAF6F0] border border-[#E8DFD1] rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#7A5C4D] font-mono mb-1">Audio Artist</label>
+                    <input
+                      type="text"
+                      value={hpForm.bgMusicArtist}
+                      onChange={(e) => setHpForm({ ...hpForm, bgMusicArtist: e.target.value })}
+                      className="w-full p-2 bg-[#FAF6F0] border border-[#E8DFD1] rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="px-4 py-2 bg-[#7A5C4D] text-white rounded-lg cursor-pointer">
+                  Save Homepage Changes
+                </button>
+              </form>
+            )}
+
+            {/* TAB 2: LETTERS MANAGER */}
+            {adminTab === 'letters' && (
+              <div className="space-y-6 text-xs">
+                <form onSubmit={handleAddLetter} className="p-4 bg-[#FAF6F0] rounded-xl border border-[#E8DFD1] space-y-3">
+                  <h4 className="font-bold text-[#4A3B32]">Add New "Read This When..." Letter</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={newLetter.category}
+                      onChange={(e) => setNewLetter({ ...newLetter, category: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    >
+                      {DEFAULT_READ_WHEN_CATEGORIES.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Letter Title"
+                      value={newLetter.title}
+                      onChange={(e) => setNewLetter({ ...newLetter, title: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={newLetter.date}
+                      onChange={(e) => setNewLetter({ ...newLetter, date: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Optional Photo URL"
+                      value={newLetter.photoUrl}
+                      onChange={(e) => setNewLetter({ ...newLetter, photoUrl: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                  </div>
+                  <textarea
+                    rows="4"
+                    placeholder="Write your letter content here..."
+                    value={newLetter.content}
+                    onChange={(e) => setNewLetter({ ...newLetter, content: e.target.value })}
+                    className="w-full p-2 bg-white border rounded-lg"
+                  />
+                  <button type="submit" className="px-4 py-2 bg-[#C48B92] text-white rounded-lg cursor-pointer">
+                    Add Letter
+                  </button>
+                </form>
+
+                <div className="space-y-2">
+                  <h4 className="font-bold text-[#4A3B32]">Existing Letters ({data.letters.length})</h4>
+                  {data.letters.map(l => (
+                    <div key={l.id} className="p-3 bg-[#FFFDF9] border rounded-lg flex items-center justify-between">
+                      <div>
+                        <span className="font-bold">{l.title}</span>
+                        <span className="text-[10px] text-[#7A5C4D] block">{l.category} • {l.date}</span>
+                      </div>
+                      <button onClick={() => handleDeleteLetter(l.id)} className="text-red-500 hover:text-red-700 cursor-pointer">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: WORDS I OWE */}
+            {adminTab === 'words_owe' && (
+              <div className="space-y-6 text-xs">
+                <form onSubmit={handleAddWordsIOwe} className="p-4 bg-[#FAF6F0] rounded-xl border border-[#E8DFD1] space-y-3">
+                  <h4 className="font-bold text-[#4A3B32]">Add New "Words I Owe You" Note</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={newWordsIOwe.category}
+                      onChange={(e) => setNewWordsIOwe({ ...newWordsIOwe, category: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    >
+                      {['Apologies', 'Things I Want to Acknowledge', 'Things I Wish I Had Said', 'Words I Struggle to Express', 'Messages About Us', 'Letters About Making Things Right'].map((c, i) => (
+                        <option key={i} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Title"
+                      value={newWordsIOwe.title}
+                      onChange={(e) => setNewWordsIOwe({ ...newWordsIOwe, title: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                  </div>
+                  <input
+                    type="date"
+                    value={newWordsIOwe.date}
+                    onChange={(e) => setNewWordsIOwe({ ...newWordsIOwe, date: e.target.value })}
+                    className="p-2 bg-white border rounded-lg w-full"
+                  />
+                  <textarea
+                    rows="3"
+                    placeholder="Message content..."
+                    value={newWordsIOwe.content}
+                    onChange={(e) => setNewWordsIOwe({ ...newWordsIOwe, content: e.target.value })}
+                    className="w-full p-2 bg-white border rounded-lg"
+                  />
+                  <button type="submit" className="px-4 py-2 bg-[#C48B92] text-white rounded-lg cursor-pointer">
+                    Add Note
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 4: POEMS */}
+            {adminTab === 'poems' && (
+              <div className="space-y-6 text-xs">
+                <form onSubmit={handleAddPoem} className="p-4 bg-[#FAF6F0] rounded-xl border border-[#E8DFD1] space-y-3">
+                  <h4 className="font-bold text-[#4A3B32]">Add New Poem</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Poem Title"
+                      value={newPoem.title}
+                      onChange={(e) => setNewPoem({ ...newPoem, title: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Author"
+                      value={newPoem.author}
+                      onChange={(e) => setNewPoem({ ...newPoem, author: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                  </div>
+                  <textarea
+                    rows="4"
+                    placeholder="Poem verses..."
+                    value={newPoem.poemText}
+                    onChange={(e) => setNewPoem({ ...newPoem, poemText: e.target.value })}
+                    className="w-full p-2 bg-white border rounded-lg"
+                  />
+                  <textarea
+                    rows="2"
+                    placeholder="Personal note: Why this reminds me of you..."
+                    value={newPoem.personalNote}
+                    onChange={(e) => setNewPoem({ ...newPoem, personalNote: e.target.value })}
+                    className="w-full p-2 bg-white border rounded-lg"
+                  />
+                  <button type="submit" className="px-4 py-2 bg-[#C48B92] text-white rounded-lg cursor-pointer">
+                    Add Poem
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 5: SONGS */}
+            {adminTab === 'songs' && (
+              <div className="space-y-6 text-xs">
+                <form onSubmit={handleAddSong} className="p-4 bg-[#FAF6F0] rounded-xl border border-[#E8DFD1] space-y-3">
+                  <h4 className="font-bold text-[#4A3B32]">Add Song to Archive</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Song Title"
+                      value={newSong.title}
+                      onChange={(e) => setNewSong({ ...newSong, title: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Artist"
+                      value={newSong.artist}
+                      onChange={(e) => setNewSong({ ...newSong, artist: e.target.value })}
+                      className="p-2 bg-white border rounded-lg"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Album Cover Image URL"
+                    value={newSong.coverUrl}
+                    onChange={(e) => setNewSong({ ...newSong, coverUrl: e.target.value })}
+                    className="p-2 bg-white border rounded-lg w-full"
+                  />
+                  <textarea
+                    rows="2"
+                    placeholder="Personal dedication message..."
+                    value={newSong.dedication}
+                    onChange={(e) => setNewSong({ ...newSong, dedication: e.target.value })}
+                    className="w-full p-2 bg-white border rounded-lg"
+                  />
+                  <button type="submit" className="px-4 py-2 bg-[#C48B92] text-white rounded-lg cursor-pointer">
+                    Add Song
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 6: 1,000 REASONS EDITOR */}
+            {adminTab === 'reasons' && (
+              <div className="space-y-6 text-xs">
+                <form onSubmit={handleSaveReasonSlot} className="p-4 bg-[#FAF6F0] rounded-xl border border-[#E8DFD1] space-y-3">
+                  <h4 className="font-bold text-[#4A3B32]">Edit / Fill Reason Slot (1 to 1000)</h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={reasonSlotInput.slot}
+                      onChange={(e) => setReasonSlotInput({ ...reasonSlotInput, slot: e.target.value })}
+                      className="w-24 p-2 bg-white border rounded-lg font-mono text-center"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Type your reason for this slot..."
+                      value={reasonSlotInput.text}
+                      onChange={(e) => setReasonSlotInput({ ...reasonSlotInput, text: e.target.value })}
+                      className="flex-grow p-2 bg-white border rounded-lg"
+                    />
+                    <button type="submit" className="px-4 py-2 bg-[#7A5C4D] text-white rounded-lg cursor-pointer">
+                      Save Slot
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-[#7A5C4D]">
+                    Current content for slot #{reasonSlotInput.slot}: "{data.reasons[reasonSlotInput.slot] || 'Empty'}"
+                  </p>
+                </form>
+              </div>
+            )}
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
